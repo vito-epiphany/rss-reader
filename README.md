@@ -48,3 +48,5 @@ cd client && npm run dev
 ```
 
 浏览器打开 http://localhost:5173 即可使用。
+
+![alt text](assets/README/image.png)
