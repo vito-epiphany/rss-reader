@@ -9,6 +9,8 @@ import {
   FolderOpen,
   Settings2,
   Upload,
+  RefreshCw,
+  Trash2,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react"
@@ -27,6 +29,8 @@ interface SidebarProps {
   onAddFeed: () => void
   onManageCategories: () => void
   onImportOpml: () => void
+  onRefreshAll: () => void
+  onDeleteFeed: (id: number) => void
   collapsed: boolean
   onToggleCollapse: () => void
 }
@@ -43,6 +47,8 @@ export function Sidebar({
   onAddFeed,
   onManageCategories,
   onImportOpml,
+  onRefreshAll,
+  onDeleteFeed,
   collapsed,
   onToggleCollapse,
 }: SidebarProps) {
@@ -213,6 +219,7 @@ export function Sidebar({
                   feed={feed}
                   selected={selectedView === "feed" && selectedFeedId === feed.id}
                   onSelect={() => onSelectFeed(feed.id)}
+                  onDelete={onDeleteFeed}
                 />
               ))}
           </div>
@@ -232,6 +239,7 @@ export function Sidebar({
                 feed={feed}
                 selected={selectedView === "feed" && selectedFeedId === feed.id}
                 onSelect={() => onSelectFeed(feed.id)}
+                onDelete={onDeleteFeed}
               />
             ))}
           </>
@@ -246,6 +254,13 @@ export function Sidebar({
           title="Add Feed"
         >
           <Plus className="w-4 h-4" />
+        </button>
+        <button
+          onClick={onRefreshAll}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-accent transition-colors"
+          title="Refresh All Feeds"
+        >
+          <RefreshCw className="w-4 h-4" />
         </button>
         <button
           onClick={onImportOpml}
@@ -280,35 +295,66 @@ function FeedItem({
   feed,
   selected,
   onSelect,
+  onDelete,
 }: {
   feed: Feed
   selected: boolean
   onSelect: () => void
+  onDelete: (id: number) => void
 }) {
+  const [showDelete, setShowDelete] = useState(false)
+
   return (
-    <button
-      onClick={onSelect}
-      className={cn(
-        "w-full flex items-center gap-3 px-4 py-1.5 text-sm transition-colors",
-        selected
-          ? "bg-accent text-accent-foreground font-medium"
-          : "text-sidebar-foreground hover:bg-accent/50"
-      )}
-    >
-      <span className="w-4 flex-shrink-0 flex items-center justify-center">
-        {feed.health_status === "error" && (
-          <span
-            className="w-2 h-2 rounded-full bg-red-500"
-            title={feed.last_error_message || "Feed unavailable"}
-          />
+    <div className="group relative">
+      <div
+        onClick={onSelect}
+        onMouseEnter={() => setShowDelete(true)}
+        onMouseLeave={() => setShowDelete(false)}
+        className={cn(
+          "w-full flex items-center gap-3 px-4 py-1.5 text-sm transition-colors cursor-pointer",
+          selected
+            ? "bg-accent text-accent-foreground font-medium"
+            : "text-sidebar-foreground hover:bg-accent/50"
         )}
-      </span>
-      <span className="flex-1 text-left truncate">{feed.title}</span>
-      {(feed.unread_count || 0) > 0 && (
-        <span className="text-xs text-muted-foreground font-medium">
-          {feed.unread_count}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === "Enter") onSelect() }}
+      >
+        <span className="w-4 flex-shrink-0 flex items-center justify-center">
+          {feed.health_status === "error" && (
+            <span
+              className="w-2 h-2 rounded-full bg-red-500"
+              title={feed.last_error_message || "Feed unavailable"}
+            />
+          )}
         </span>
-      )}
-    </button>
+        <span className="flex-1 text-left truncate">{feed.title}</span>
+        {/* Right side: unread count or delete button (mutually exclusive) */}
+        <div className="w-6 h-4 flex items-center justify-end">
+          {/* Unread count - shown when not hovering */}
+          {(feed.unread_count || 0) > 0 && !showDelete && (
+            <span className="text-xs text-muted-foreground font-medium">
+              {feed.unread_count}
+            </span>
+          )}
+          
+          {/* Delete button - shown on hover, same position */}
+          {showDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (confirm(`确定要取消订阅 "${feed.title}" 吗？`)) {
+                  onDelete(feed.id)
+                }
+              }}
+              className="p-0.5 rounded text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+              title={`取消订阅 ${feed.title}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }

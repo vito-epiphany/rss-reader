@@ -137,6 +137,16 @@ function App() {
     await loadFeeds()
   }
 
+  const handleToggleRead = async (id: number, isRead: boolean) => {
+    await api.markRead(id, isRead)
+    setArticles(prev => 
+      prev.map(a => 
+        a.id === id ? { ...a, is_read: isRead ? 1 : 0 } : a
+      )
+    )
+    loadFeeds() // 更新未读数
+  }
+
   const handleDeleteCategory = async (id: number) => {
     await api.deleteCategory(id)
     await loadFeeds()
@@ -147,6 +157,28 @@ function App() {
     await api.markAllRead(feedId)
     setArticles((prev) => prev.map((a) => ({ ...a, is_read: 1 })))
     loadFeeds()
+  }
+
+  const handleRefreshAll = async () => {
+    setLoadingArticles(true)
+    try {
+      await api.refreshAllFeeds()
+      await loadArticles()
+      await loadFeeds()
+    } finally {
+      setLoadingArticles(false)
+    }
+  }
+
+  const handleDeleteFeed = async (id: number) => {
+    await api.deleteFeed(id)
+    await loadFeeds()
+    // 如果删除的是当前选中的 feed，清除选择
+    if (selectedFeedId === id) {
+      setSelectedFeedId(null)
+      setSelectedView("all")
+      setArticles([])
+    }
   }
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -184,6 +216,8 @@ function App() {
         onAddFeed={() => setShowAddFeed(true)}
         onManageCategories={() => setShowManageCategories(true)}
         onImportOpml={handleImportOpml}
+        onRefreshAll={handleRefreshAll}
+        onDeleteFeed={handleDeleteFeed}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
       />
@@ -220,6 +254,7 @@ function App() {
               selectedId={selectedArticle?.id ?? null}
               onSelect={handleSelectArticle}
               onToggleStar={handleToggleStar}
+              onToggleRead={handleToggleRead}
               loading={loadingArticles}
             />
           </div>

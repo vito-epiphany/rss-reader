@@ -7,6 +7,7 @@ interface ArticleListProps {
   selectedId: number | null
   onSelect: (article: Article) => void
   onToggleStar: (id: number, starred: boolean) => void
+  onToggleRead: (id: number, isRead: boolean) => void
   loading: boolean
 }
 
@@ -15,6 +16,7 @@ export function ArticleList({
   selectedId,
   onSelect,
   onToggleStar,
+  onToggleRead,
   loading,
 }: ArticleListProps) {
   const formatDate = (dateStr: string | null) => {
@@ -62,17 +64,27 @@ export function ArticleList({
                 article.is_read && selectedId !== article.id && "opacity-60"
               )}
             >
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-3">
                 {/* Unread indicator */}
                 <div className="mt-1.5 flex-shrink-0">
-                  {article.is_read ? (
-                    <CheckCircle2 className="w-3 h-3 text-muted-foreground/40" />
-                  ) : (
-                    <Circle className="w-3 h-3 fill-primary text-primary" />
-                  )}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      onToggleRead(article.id, !article.is_read)
+                    }}
+                    className="p-1 rounded hover:bg-accent transition-colors"
+                    title={article.is_read ? "Mark as unread" : "Mark as read"}
+                  >
+                    {article.is_read ? (
+                      <CheckCircle2 className="w-3 h-3 text-muted-foreground/40" />
+                    ) : (
+                      <Circle className="w-3 h-3 fill-primary text-primary" />
+                    )}
+                  </button>
                 </div>
 
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 mr-2">
                   <h3
                     className={cn(
                       "text-sm leading-snug line-clamp-2",
